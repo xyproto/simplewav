@@ -4,6 +4,8 @@ Given a slice of float64 and a sample rate (like 44100), write the audio to a WA
 
 The example in `cmd/sawtooth` generates a 1 second long audio file containing a sawtooth wave at 220Hz.
 
+This is only for 16-bit 1-channel WAV files, for now.
+
 ## Example use
 
 ```go
