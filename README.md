@@ -35,6 +35,10 @@ func main() {
 }
 ```
 
+## Example image and audio
+
+[![waveform](test.png)](test.wav)
+
 ## General info
 
 * Version: 1.0.0
