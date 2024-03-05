@@ -1,7 +1,10 @@
+.DS_Store
 *.bak
 *.o
 *.swp
 *.tmp
 cmd/sawtooth/sawtooth
 cmd/sawtooth/test.wav
+cmd/draw/draw
+cmd/draw/test.png
 include.txt
