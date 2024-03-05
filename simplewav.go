@@ -2,6 +2,8 @@ package simplewav
 
 import (
 	"encoding/binary"
+	"io"
+	"math"
 	"os"
 )
 
@@ -10,68 +12,57 @@ const (
 	numChannels   = 1
 )
 
-// writeHeader writes a minimal WAV header to a file
-func writeHeader(file *os.File, numSamples, sampleRate int) error {
-	// WAV file header size: 44 bytes
-	var (
-		fileSize      int32 = 44 + int32(numSamples)*numChannels*bitsPerSample/8
-		audioFormat   int16 = 1 // PCM = 1
-		byteRate      int32 = int32(sampleRate) * int32(numChannels) * bitsPerSample / 8
-		blockAlign    int16 = numChannels * bitsPerSample / 8
-		subChunk2Size int32 = int32(numSamples) * int32(numChannels) * bitsPerSample / 8
-	)
+// writeHeader writes a minimal WAV header to an io.Writer.
+func writeHeader(w io.Writer, numSamples, sampleRate int) error {
+	// Ensure all calculations use fixed-size types for binary writing.
+	fileSize := uint32(44 + numSamples*numChannels*bitsPerSample/8)
+	audioFormat := int16(1) // PCM = 1
+	byteRate := uint32(sampleRate) * uint32(numChannels) * uint32(bitsPerSample) / 8
+	blockAlign := uint16(numChannels * bitsPerSample / 8)
+	subChunk2Size := uint32(numSamples) * uint32(numChannels) * uint32(bitsPerSample) / 8
 
-	// RIFF header
-	if _, err := file.Write([]byte("RIFF")); err != nil {
-		return err
+	// Directly write the byte slices and fixed-size data to the writer
+	parts := []struct {
+		data interface{}
+	}{
+		{[]byte("RIFF")},
+		{fileSize - 8},
+		{[]byte("WAVE")},
+		{[]byte("fmt ")},
+		{uint32(16)}, // Subchunk1Size for PCM
+		{audioFormat},
+		{int16(numChannels)},
+		{uint32(sampleRate)},
+		{byteRate},
+		{blockAlign},
+		{int16(bitsPerSample)},
+		{[]byte("data")},
+		{subChunk2Size},
 	}
 
-	binary.Write(file, binary.LittleEndian, fileSize-8) // File size minus RIFF header size
-
-	if _, err := file.Write([]byte("WAVE")); err != nil {
-		return err
+	for _, part := range parts {
+		if err := binary.Write(w, binary.LittleEndian, part.data); err != nil {
+			return err
+		}
 	}
 
-	// fmt subchunk
-	if _, err := file.Write([]byte("fmt ")); err != nil {
-		return err
-	}
-
-	binary.Write(file, binary.LittleEndian, int32(16)) // Subchunk1Size (16 for PCM)
-	binary.Write(file, binary.LittleEndian, audioFormat)
-	binary.Write(file, binary.LittleEndian, int16(numChannels))
-	binary.Write(file, binary.LittleEndian, int32(sampleRate))
-	binary.Write(file, binary.LittleEndian, byteRate)
-	binary.Write(file, binary.LittleEndian, blockAlign)
-	binary.Write(file, binary.LittleEndian, int16(bitsPerSample))
-
-	// data subchunk
-	if _, err := file.Write([]byte("data")); err != nil {
-		return err
-	}
-	binary.Write(file, binary.LittleEndian, subChunk2Size)
 	return nil
 }
 
+// Write creates a WAV file from a slice of float64 audio samples
 func Write(wave []float64, filename string, sampleRate int) error {
-	// Create a new file
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-
-	// Write the WAV header
 	if err := writeHeader(file, len(wave), sampleRate); err != nil {
 		return err
 	}
-
-	// Write the audio data
-	for _, sample := range wave {
-		// Convert the sample from -1.0 <= sample <= 1.0 to 16-bit signed integer
-		var intSample int16 = int16(sample * 32767)
-		binary.Write(file, binary.LittleEndian, intSample)
+	buffer := make([]int16, len(wave))
+	const maxInt16 = float64(math.MaxInt16)
+	for i, sample := range wave {
+		buffer[i] = int16(sample * maxInt16)
 	}
-
-	return nil
+	return binary.Write(file, binary.LittleEndian, buffer)
 }
