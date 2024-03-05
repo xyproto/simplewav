@@ -1,6 +1,6 @@
 # simplewav
 
-Given a slice of float64 and a sample rate (like 44100), write the audio to a WAV file.
+Given a `float64[]` and a sample rate (like `44100`), write the audio to a WAV file.
 
 The example in `cmd/sawtooth` generates a 1 second long audio file containing a sawtooth wave at 220Hz.
 
