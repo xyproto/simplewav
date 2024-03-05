@@ -37,4 +37,5 @@ func main() {
 
 ## General info
 
-License: BSD-3
+* Version: 1.0.0
+* License: BSD-3
