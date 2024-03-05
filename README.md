@@ -35,9 +35,9 @@ func main() {
 }
 ```
 
-## Example image and audio
+## Image representation of the example sawtooth wave
 
-[![waveform](test.png)](test.wav)
+![waveform](test.png)
 
 ## General info
 
