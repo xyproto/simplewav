@@ -2,5 +2,6 @@
 *.o
 *.swp
 *.tmp
+cmd/sawtooth/sawtooth
+cmd/sawtooth/test.wav
 include.txt
-simplewav
